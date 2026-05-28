@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { runDoctor } from "./validate/doctor.js";
+import { looksLikeVerbPhrase, runDoctor } from "./validate/doctor.js";
 import { initProject } from "./project.js";
 import { createUseCase, listUseCases, showUseCase } from "./usecase-commands.js";
 import {
@@ -63,21 +63,26 @@ export function buildProgram(): Command {
       const result = runDoctor({ target });
       const errors = result.findings.filter((finding) => finding.level === "error");
       const warnings = result.findings.filter((finding) => finding.level === "warn");
-      const data = { files: result.files, findings: result.findings };
+      const summary = { errors: errors.length, warnings: warnings.length };
+      const data = { files: result.files, summary, findings: result.findings };
 
       if (format === "agent") {
         if (errors.length > 0) {
           outputError(format, {
             code: "VALIDATION_FAILED",
             message: `${errors.length} validation error(s).`,
-            details: { findings: result.findings },
+            details: { summary, findings: result.findings },
             actions: suggestDoctorActions(result.findings),
           });
           return;
         }
+        const reviewWarnings =
+          warnings.length > 0
+            ? [{ command: `vspec doctor${target ? ` ${target}` : ""} --format=human`, reason: `${warnings.length} warning(s) to review before export.` }]
+            : [];
         outputSuccess(format, {
           data,
-          suggestedNextActions: [{ command: "vspec export gherkin <KEY>", reason: "Export validated use cases." }],
+          suggestedNextActions: [...reviewWarnings, { command: "vspec export gherkin <KEY>", reason: "Export validated use cases." }],
           warnings: warnings.map((finding) => ({ message: finding.message })),
         });
         return;
@@ -108,6 +113,9 @@ export function buildProgram(): Command {
         data: created,
         human: `${created.key} ${created.path}`,
         affectedFiles: created.affectedFiles.map((path) => ({ path })),
+        warnings: looksLikeVerbPhrase(options.title)
+          ? []
+          : [{ message: `Title "${options.title}" is not a verb phrase. Cockburn titles read as a goal, e.g. "주문을 생성한다" / "Place an order".` }],
         suggestedNextActions: [
           { command: `vspec doctor ${created.key}`, reason: "Validate before committing." },
           { command: `vspec usecase add-stakeholder ${created.key} --stakeholder project-team --interest "..."`, reason: "Add more interests." },
@@ -285,7 +293,13 @@ function suggestDoctorActions(findings: { rule: string; message: string }[]) {
 function runCommand<T>(
   options: { format?: string } | undefined,
   fn: () => T,
-  payload: (data: T) => { data: unknown; human?: string; affectedFiles?: { path: string }[]; suggestedNextActions: { command: string; reason?: string }[] },
+  payload: (data: T) => {
+    data: unknown;
+    human?: string;
+    affectedFiles?: { path: string }[];
+    warnings?: { message: string }[];
+    suggestedNextActions: { command: string; reason?: string }[];
+  },
 ) {
   try {
     const result = fn();

@@ -321,7 +321,7 @@ function containsHangul(text: string): boolean {
   return /[가-힣]/.test(text);
 }
 
-function looksLikeVerbPhrase(title: string): boolean {
+export function looksLikeVerbPhrase(title: string): boolean {
   if (containsHangul(title)) {
     const stripped = title.trim().replace(/[\s\p{P}\p{Z}「」『』【】〔〕《》〈〉"'()\[\]{}]+$/u, "");
     return /[다라자]$/.test(stripped);
