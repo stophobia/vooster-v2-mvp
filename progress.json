@@ -79,11 +79,11 @@
     {
       "id": "P6",
       "title": "Gherkin export",
-      "status": "todo",
+      "status": "done",
       "gate": "golden-file test: fixture use case renders byte-for-byte to expected .feature",
       "tasks": [
-        { "id": "P6-T1", "title": "Gherkin renderer (Feature/Background/Main/Extensions/outcome)", "status": "todo" },
-        { "id": "P6-T2", "title": "vspec export gherkin <KEY> [--output]; agent envelope with affected_files", "status": "todo" }
+        { "id": "P6-T1", "title": "Gherkin renderer (Feature/Background/Main/Extensions/outcome)", "status": "done" },
+        { "id": "P6-T2", "title": "vspec export gherkin <KEY> [--output]; agent envelope with affected_files", "status": "done" }
       ]
     },
     {

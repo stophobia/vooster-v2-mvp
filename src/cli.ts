@@ -19,6 +19,7 @@ import {
 import { addScenario, addStakeholderInterest, addStep, editStep, setUseCaseField } from "./mutators.js";
 import { addFormatOption, errorInfo, formatFrom, outputError, outputSuccess, type OutputFormat } from "./output.js";
 import { aiGuideText } from "./ai-guide.js";
+import { exportGherkin } from "./export/gherkin.js";
 
 export function buildProgram(): Command {
   const program = new Command();
@@ -250,6 +251,17 @@ export function buildProgram(): Command {
     .action((key: string, options: { step: string; actor?: string; action?: string; format?: string }) =>
       runCommand(options, () => editStep({ key, ...options }), (result) => mutationPayload(result, key)),
     );
+
+  const exportCommand = program.command("export").description("Export use cases");
+  addFormatOption(exportCommand.command("gherkin").argument("<key>").option("--output <path>")).action(
+    (key: string, options: { output?: string; format?: string }) =>
+      runCommand(options, () => exportGherkin({ key, output: options.output }), (result) => ({
+        data: result.text,
+        human: result.path,
+        affectedFiles: [{ path: result.path }],
+        suggestedNextActions: [{ command: `git add ${result.path}`, reason: "Stage the exported feature when ready." }],
+      })),
+  );
 
   return program;
 }

@@ -59,6 +59,7 @@ describe("agent format across commands", () => {
     run("scenario", "add", created.key, "--type", "extension", "--at", "1a", "--condition", "Export cannot be written");
     run("step", "add", created.key, "--actor", "system", "--action", "reports the write failure");
     run("step", "edit", created.key, "--step", "1", "--action", "requests a gherkin export");
+    run("export", "gherkin", created.key);
     run("doctor", created.key);
     rmSync(root, { recursive: true, force: true });
   }, 20_000);
